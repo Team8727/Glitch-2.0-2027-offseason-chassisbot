@@ -1,0 +1,16 @@
+wpi.override.context.java
+wpi.override.context.java.debug
+wpi.override.context.java.release
+wpi.override.context.simulation
+wpi.override.context.simulation.java
+wpi.override.context.simulation.java.debug
+wpi.override.context.simulation.java.release
+wpi.override.platform.roborio
+wpi.override.platform.desktop
+wpi.override.config.java
+wpi.override.config.java.debug
+wpi.override.config.java.release
+wpi.override.config.simulation
+wpi.override.config.simulation.java
+wpi.override.config.simulation.java.debug
+wpi.override.config.simulation.java.release
