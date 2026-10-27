@@ -6,8 +6,9 @@
   named `Milo`. Create/switch to `Milo` (creating it from the latest `main` if it
   does not exist) before making any changes.
 - Project conventions otherwise follow the team's 2026 chassisbot repo:
-  `frc.robot.Subsystems` for subsystems, `frc.robot.Commands` for commands,
-  GlitchLib is consumed as a git submodule and left unmodified.
+  `frc.robot.Subsystems` for subsystems, `frc.robot.Commands` for commands.
+- **GlitchLib is no longer used in this project.** Do not reference it, restore
+  the submodule, or add its sources back to the build.
 
 ## Build & test
 
