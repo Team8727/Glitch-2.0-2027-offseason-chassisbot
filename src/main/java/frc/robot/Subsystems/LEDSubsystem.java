@@ -1,6 +1,5 @@
 package frc.robot.Subsystems;
 
-import Glitch.Lib.LEDs.GlitchLEDPatterns;
 import com.ctre.phoenix6.signals.StripTypeValue;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.util.Color;
@@ -27,11 +26,11 @@ public class LEDSubsystem extends CandleLEDs {
   public static final double FIRE_SPEED = 0.5;
 
   public final LEDPattern greenFire =
-      GlitchLEDPatterns.fire(
+      LocalLEDPatterns.fire(
           LEDPattern.solid(EMERALD), FIRE_UPDATE_TIME_SECONDS, Color.kGreen, FIRE_SPEED);
 
   public final LEDPattern blueFire =
-      GlitchLEDPatterns.fire(
+      LocalLEDPatterns.fire(
           LEDPattern.solid(ROYAL_BLUE), FIRE_UPDATE_TIME_SECONDS, Color.kBlue, FIRE_SPEED);
 
   public final LEDPattern whiteScan =
