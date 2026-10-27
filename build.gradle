@@ -6,13 +6,13 @@ plugins {
 sourceSets {
   main {
     java {
-      srcDirs += ['src/main/java', 'GlitchLib/Glitch/Lib/main']
+      srcDirs += ['src/main/java']
     }
   }
 
   test {
     java {
-      srcDirs += ['src/test/java', 'GlitchLib/Glitch/Lib/test']
+      srcDirs += ['src/test/java']
     }
   }
 }

@@ -5,53 +5,34 @@
 package frc.robot.Subsystems;
 
 import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.configs.CandleConfiguration;
-import com.ctre.phoenix6.configs.LedStripType;
-import com.ctre.phoenix6.led.Candle;
-import edu.wpi.first.wpilibj.AddressableLEDBuffer;
-import edu.wpi.first.wpilibj.AddressableLEDBufferView;
+import com.ctre.phoenix6.configs.CANdleConfiguration;
+import com.ctre.phoenix6.controls.ControlRequest;
+import com.ctre.phoenix6.controls.EmptyAnimation;
+import com.ctre.phoenix6.controls.SolidColor;
+import com.ctre.phoenix6.hardware.CANdle;
+import com.ctre.phoenix6.signals.Enable5VRailValue;
+import com.ctre.phoenix6.signals.RGBWColor;
+import com.ctre.phoenix6.signals.StripTypeValue;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.LEDPattern;
-import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-import static edu.wpi.first.units.Units.Microseconds;
-import static edu.wpi.first.units.Units.Seconds;
-
 /**
- * Abstract base class for a CTRE CANdle-driven LED strip.
+ * Abstract base class for a Phoenix 6 CANdle-driven LED strip.
  *
- * <p>This class replaces the PWM {@code AddressableLED} layer of GlitchLib's
- * {@code AbstractLEDS} with a Phoenix 6 {@link Candle}, while keeping the same
- * per-section pattern model: each section has a base pattern that it returns to
- * after a timed pattern finishes, so WPILib {@link LEDPattern}s (including the
- * GlitchLib fire patterns) compose exactly like they do on the PWM strip.
- *
- * <p>Because the CANdle cannot consume an {@code AddressableLEDBuffer} directly,
- * patterns are rendered into an on-roboRIO buffer and then streamed to the CANdle
- * pixel by pixel with {@link Candle#setLEDs(int, int, int, int, int)}. To comply
- * with the team's anti-flicker / epilepsy guideline, the strip is only refreshed
- * at most once every {@link #ledRefreshPeriodSeconds} seconds, matching the cadence
- * of GlitchLib's {@code AbstractLEDS}.
+ * <p>The CANdle renders animations on the device itself, so this class manages a
+ * single animation over the whole strip. Subclasses pick the animation per robot
+ * mode (e.g. a flowing team-color pattern while disabled or enabled) and can
+ * temporarily override it for a duration before reverting to the base animation.
  */
 public abstract class CandleLEDs extends SubsystemBase {
 
-  /** Duration sentinel meaning "run forever". */
-  public static final double infiniteDurationSeconds = -1.0;
-
-  /** Maximum strip refresh rate in seconds (eye-safety throttle). */
-  public static final double ledRefreshPeriodSeconds = 0.2;
-
-  private final Candle candle;
-  private final AddressableLEDBuffer stripBuffer;
-
-  /** The single continuous section covering the whole strip. */
-  protected final Section strip;
-
+  private final CANdle candle;
+  private final int ledCount;
+  private ControlRequest baseRequest;
+  private ControlRequest activeRequest;
+  private double overrideEndsAt = Double.POSITIVE_INFINITY;
   private boolean enabled = true;
-  private double lastUpdateTimeMicroseconds;
-  private double lastLedWriteTimeMicroseconds;
-  private double deltaTimeSeconds;
   private boolean candleUnhealthyLogged = false;
 
   /**
@@ -62,109 +43,68 @@ public abstract class CandleLEDs extends SubsystemBase {
    * @param brightnessScalar Global brightness from 0.0 to 1.0 applied by the CANdle.
    * @param stripType The RGB channel order of the physical strip.
    */
-  protected CandleLEDs(int candleId, int ledCount, double brightnessScalar, LedStripType stripType) {
-    candle = new Candle(candleId);
+  protected CandleLEDs(int candleId, int ledCount, double brightnessScalar, StripTypeValue stripType) {
+    this.candle = new CANdle(candleId);
+    this.ledCount = ledCount;
 
-    CandleConfiguration config = new CandleConfiguration();
-    config.brightnessScalar = brightnessScalar;
-    config.v5Enabled = true; // CANdle VBUS powers the strip; without this nothing lights up.
-    config.stripType = stripType;
-    // Note: field names / return types in CandleConfiguration depend on the vendored
-    // Phoenix 6 version (26.1.1 in the 2026 repo); rename if the build disagrees.
+    CANdleConfiguration config = new CANdleConfiguration();
+    config.LED.StripType = stripType;
+    config.LED.BrightnessScalar = brightnessScalar;
+    // CANdle VBUS powers the strip; without this nothing lights up.
+    config.CANdleFeatures.Enable5VRail = Enable5VRailValue.Enabled;
     candle.getConfigurator().apply(config);
 
-    stripBuffer = new AddressableLEDBuffer(ledCount);
-    strip = new Section(0, ledCount - 1);
+    baseRequest = new SolidColor(0, Math.max(0, ledCount - 1)).withColor(new RGBWColor(0, 0, 0));
+    activeRequest = baseRequest;
+  }
+
+  /** Returns the number of LEDs wired to the CANdle. */
+  protected int getLedCount() {
+    return ledCount;
   }
 
   /**
-   * Represents a section of the LED strip with a base pattern and an optional
-   * finite-duration pattern that reverts to the base when it completes.
+   * Sets the animation the strip returns to once a timed override has completed.
+   *
+   * @param request The base animation to display.
    */
-  public class Section {
-    private final AddressableLEDBufferView bufferView;
-    private LEDPattern pattern = LEDPattern.kOff;
-    private LEDPattern basePattern = LEDPattern.kOff;
-    private double durationSeconds = infiniteDurationSeconds;
-    private double elapsedSeconds = 0.0;
+  protected void setBaseAnimation(ControlRequest request) {
+    baseRequest = request;
+    setAnimation(request);
+  }
 
-    private Section(int startIndex, int endIndex) {
-      bufferView = stripBuffer.createView(startIndex, endIndex);
-    }
+  /** Returns the animation the strip reverts to once timed overrides complete. */
+  protected ControlRequest getBaseAnimation() {
+    return baseRequest;
+  }
 
-    /**
-     * Sets the section's pattern for a finite duration, after which the section
-     * returns to its base pattern.
-     *
-     * @param pattern The pattern to display.
-     * @param durationSeconds How long to display it before reverting to the base.
-     */
-    public void setPattern(LEDPattern pattern, double durationSeconds) {
-      if (pattern == null) {
-        pattern = LEDPattern.kOff;
-      }
-      this.pattern = pattern;
-      this.durationSeconds = durationSeconds;
-      this.elapsedSeconds = 0.0;
-    }
+  /**
+   * Sets the strip animation indefinitely, overriding the base until changed.
+   *
+   * @param request The animation to display.
+   */
+  protected void setAnimation(ControlRequest request) {
+    activeRequest = request;
+    overrideEndsAt = Double.POSITIVE_INFINITY;
+    send();
+  }
 
-    /**
-     * Sets the section's pattern indefinitely.
-     *
-     * @param pattern The pattern to display.
-     */
-    public void setPattern(LEDPattern pattern) {
-      setPattern(pattern, infiniteDurationSeconds);
-    }
+  /**
+   * Sets the strip animation for a finite duration, after which the strip reverts
+   * to its base animation.
+   *
+   * @param request The animation to display.
+   * @param durationSeconds How long to display it before reverting to the base.
+   */
+  protected void setAnimation(ControlRequest request, double durationSeconds) {
+    activeRequest = request;
+    overrideEndsAt = Timer.getFPGATimestamp() + durationSeconds;
+    send();
+  }
 
-    /**
-     * Sets the pattern the section returns to once a timed pattern has completed.
-     *
-     * @param basePattern The fallback pattern.
-     */
-    public void setBase(LEDPattern basePattern) {
-      if (basePattern == null) {
-        basePattern = LEDPattern.kOff;
-      }
-      this.basePattern = basePattern;
-    }
-
-    /**
-     * Advances the section by the given time, applying its active pattern to the
-     * underlying buffer view. Called by {@link CandleLEDs#periodic()}.
-     *
-     * @param deltaTimeSeconds Time elapsed since the last update, in seconds.
-     */
-    void update(double deltaTimeSeconds) {
-      if (durationSeconds != infiniteDurationSeconds) {
-        elapsedSeconds += deltaTimeSeconds;
-        if (elapsedSeconds >= durationSeconds) {
-          setPattern(basePattern);
-        }
-      }
-
-      pattern.applyTo(bufferView);
-    }
-
-    /** Returns the buffer view for this section. */
-    public AddressableLEDBufferView getBufferView() {
-      return bufferView;
-    }
-
-    /** Returns the number of LEDs in this section. */
-    public int getLength() {
-      return bufferView.getLength();
-    }
-
-    /** Returns the pattern currently applied to this section. */
-    public LEDPattern getCurrentPattern() {
-      return pattern;
-    }
-
-    /** Returns the pattern this section reverts to once timed patterns complete. */
-    public LEDPattern getBasePattern() {
-      return basePattern;
-    }
+  /** Clears any override and returns the strip to the base animation. */
+  protected void clearAnimationOverride() {
+    setAnimation(baseRequest);
   }
 
   /**
@@ -174,65 +114,43 @@ public abstract class CandleLEDs extends SubsystemBase {
    * @param enabled Whether the strip should keep rendering.
    */
   public void setEnabled(boolean enabled) {
-    if (!enabled && this.enabled) {
-      candle.setLEDs(0, stripBuffer.getLength(), 0, 0, 0);
+    if (this.enabled == enabled) {
+      return;
     }
     this.enabled = enabled;
+    if (enabled) {
+      send();
+    } else {
+      candle.setControl(new EmptyAnimation(0));
+    }
   }
 
-  /** Returns whether the strip is currently rendering patterns. */
+  /** Returns whether the strip is currently rendering animations. */
   public boolean isEnabled() {
     return enabled;
   }
 
   /**
-   * Updates all sections and streams the rendered buffer to the CANdle, throttled
-   * to {@link #ledRefreshPeriodSeconds}. Runs automatically via the command
+   * Reverts timed overrides once they expire. Runs automatically via the command
    * scheduler since this class extends {@link SubsystemBase}.
    */
   @Override
   public void periodic() {
-    double now = RobotController.getTime();
-    if (lastUpdateTimeMicroseconds == 0.0) {
-      deltaTimeSeconds = 0.02;
-    } else {
-      deltaTimeSeconds = Microseconds.of(now - lastUpdateTimeMicroseconds).in(Seconds);
-    }
-    lastUpdateTimeMicroseconds = now;
-
-    strip.update(deltaTimeSeconds);
-
     if (!enabled) {
       return;
     }
-
-    if (now - lastLedWriteTimeMicroseconds < Seconds.of(ledRefreshPeriodSeconds).in(Microseconds)) {
-      return;
+    if (overrideEndsAt != Double.POSITIVE_INFINITY && Timer.getFPGATimestamp() >= overrideEndsAt) {
+      setAnimation(baseRequest);
     }
-    lastLedWriteTimeMicroseconds = now;
-
-    pushToCandle();
   }
 
-  private void pushToCandle() {
-    boolean healthy = true;
-    for (int i = 0; i < stripBuffer.getLength(); i++) {
-      if (candle.setLEDs(i, 1, stripBuffer.getRed(i), stripBuffer.getGreen(i), stripBuffer.getBlue(i))
-          != StatusCode.OK) {
-        healthy = false;
-        break;
-      }
-    }
-
-    if (!healthy) {
-      if (!candleUnhealthyLogged) {
-        candleUnhealthyLogged = true;
-        DriverStation.reportError(
-            "CANdle is not responding over CAN. Check the device ID and wiring.", false);
-      }
-      // Keep lastLedWriteTimeMicroseconds untouched so retries stay on the 0.2 s throttle
-      // instead of bursting every robot period while the fault persists.
-    } else {
+  private void send() {
+    StatusCode status = candle.setControl(activeRequest);
+    if (status != StatusCode.OK && !candleUnhealthyLogged) {
+      candleUnhealthyLogged = true;
+      DriverStation.reportError(
+          "CANdle is not responding over CAN. Check the device ID and wiring.", false);
+    } else if (status == StatusCode.OK) {
       candleUnhealthyLogged = false;
     }
   }

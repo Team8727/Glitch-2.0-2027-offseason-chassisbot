@@ -4,21 +4,19 @@
 
 package frc.robot.Subsystems;
 
-import Glitch.Lib.LEDs.GlitchLEDPatterns;
-import com.ctre.phoenix6.configs.LedStripType;
-import edu.wpi.first.wpilibj.LEDPattern;
-import edu.wpi.first.wpilibj.util.Color;
-
-import static edu.wpi.first.units.Units.Percent;
-import static edu.wpi.first.units.Units.Second;
+import com.ctre.phoenix6.controls.ColorFlowAnimation;
+import com.ctre.phoenix6.controls.ControlRequest;
+import com.ctre.phoenix6.signals.AnimationDirectionValue;
+import com.ctre.phoenix6.signals.RGBWColor;
+import com.ctre.phoenix6.signals.StripTypeValue;
 
 /**
  * Team LED subsystem for the offseason chassisbot.
  *
- * <p>Drives the CTRE CANdle with green/blue fire patterns built on top of
- * GlitchLib's {@code GlitchLEDPatterns.fire(...)} overlay. The strip is a single
- * continuous section of {@value #LED_COUNT} LEDs, so all of the tunable values below
- * live in one block for easy on-bench adjustment.
+ * <p>Drives the CTRE CANdle with flowing team-color patterns built from the
+ * CANdle's on-device animations. The strip is a single continuous segment of
+ * {@value #LED_COUNT} LEDs, so all of the tunable values below live in one
+ * block for easy on-bench adjustment.
  */
 public class LEDSubsystem extends CandleLEDs {
 
@@ -34,35 +32,31 @@ public class LEDSubsystem extends CandleLEDs {
   public static final double BRIGHTNESS_SCALAR = 0.7;
 
   /** RGB channel order of the physical strip. */
-  public static final LedStripType STRIP_TYPE = LedStripType.kRGB;
+  public static final StripTypeValue STRIP_TYPE = StripTypeValue.RGB;
 
   /** Deep emerald flame body (team green). */
-  public static final Color EMERALD = new Color(0, 60, 35);
+  public static final RGBWColor EMERALD = new RGBWColor(0, 60, 35);
 
   /** Royal blue flame body (team blue). */
-  public static final Color ROYAL_BLUE = new Color(5, 20, 90);
+  public static final RGBWColor ROYAL_BLUE = new RGBWColor(5, 20, 90);
 
-  /** Seconds between fire overlay updates. */
-  public static final double FIRE_UPDATE_TIME_SECONDS = 0.11;
+  /** Speed of the flowing team-color patterns, in frames per second. */
+  public static final double FLOW_FRAME_RATE_HZ = 12.0;
 
-  /** Fire wave speed; 1.0 is normal, lower is slower. */
-  public static final double FIRE_SPEED = 0.5;
+  /** Speed of the bench scan, in frames per second. */
+  public static final double SCAN_FRAME_RATE_HZ = 24.0;
 
   // ---------- Patterns ----------
 
-  /** Fire overlay over an emerald body, tinted green toward the flame tips. */
-  public final LEDPattern greenFire =
-      GlitchLEDPatterns.fire(
-          LEDPattern.solid(EMERALD), FIRE_UPDATE_TIME_SECONDS, Color.kGreen, FIRE_SPEED);
+  /** Flowing emerald pattern used while disabled. */
+  public final ControlRequest greenFlow = flow(EMERALD, FLOW_FRAME_RATE_HZ);
 
-  /** Fire overlay over a royal blue body, tinted blue toward the flame tips. */
-  public final LEDPattern blueFire =
-      GlitchLEDPatterns.fire(
-          LEDPattern.solid(ROYAL_BLUE), FIRE_UPDATE_TIME_SECONDS, Color.kBlue, FIRE_SPEED);
+  /** Flowing royal blue pattern used while enabled. */
+  public final ControlRequest blueFlow = flow(ROYAL_BLUE, FLOW_FRAME_RATE_HZ);
 
   /** Scrolling white scan used to verify pixel order on the bench. */
-  public final LEDPattern whiteScan =
-      LEDPattern.solid(Color.kWhite).scrollAtRelativeSpeed(Percent.per(Second).of(100));
+  public final ControlRequest whiteScan =
+      flow(new RGBWColor(255, 255, 255), SCAN_FRAME_RATE_HZ);
 
   private static LEDSubsystem instance;
 
@@ -82,22 +76,19 @@ public class LEDSubsystem extends CandleLEDs {
     return instance;
   }
 
-  /** Idle behavior while disabled: green fire. */
+  /** Idle behavior while disabled: green flow. */
   public void start() {
-    strip.setBase(greenFire);
-    strip.setPattern(greenFire);
+    setBaseAnimation(greenFlow);
   }
 
-  /** Autonomous mode: blue fire. */
+  /** Autonomous mode: blue flow. */
   public void autoInit() {
-    strip.setBase(blueFire);
-    strip.setPattern(blueFire);
+    setBaseAnimation(blueFlow);
   }
 
-  /** Teleoperated mode: blue fire. */
+  /** Teleoperated mode: blue flow. */
   public void teleopInit() {
-    strip.setBase(blueFire);
-    strip.setPattern(blueFire);
+    setBaseAnimation(blueFlow);
   }
 
   /**
@@ -105,31 +96,38 @@ public class LEDSubsystem extends CandleLEDs {
    * pixel order, then reverts to the base pattern.
    */
   public void testInit() {
-    strip.setPattern(whiteScan, 10.0);
+    setAnimation(whiteScan, 10.0);
   }
 
   /**
-   * Temporarily overrides the strip pattern indefinitely, ignoring the mode base.
+   * Temporarily overrides the strip animation indefinitely, ignoring the mode base.
    *
-   * @param pattern The pattern to display.
+   * @param request The animation to display.
    */
-  public void setOverride(LEDPattern pattern) {
-    strip.setPattern(pattern);
+  public void setOverride(ControlRequest request) {
+    setAnimation(request);
   }
 
   /**
-   * Temporarily overrides the strip pattern for a duration, after which the strip
-   * returns to the mode base pattern.
+   * Temporarily overrides the strip animation for a duration, after which the strip
+   * returns to the mode base animation.
    *
-   * @param pattern The pattern to display.
+   * @param request The animation to display.
    * @param seconds How long to display it before reverting to the base.
    */
-  public void setOverride(LEDPattern pattern, double seconds) {
-    strip.setPattern(pattern, seconds);
+  public void setOverride(ControlRequest request, double seconds) {
+    setAnimation(request, seconds);
   }
 
-  /** Clears any override and returns the strip to the mode base pattern. */
+  /** Clears any override and returns the strip to the mode base animation. */
   public void clearOverride() {
-    strip.setPattern(strip.getBasePattern());
+    clearAnimationOverride();
+  }
+
+  private ControlRequest flow(RGBWColor color, double frameRate) {
+    return new ColorFlowAnimation(0, getLedCount() - 1)
+        .withColor(color)
+        .withDirection(AnimationDirectionValue.Forward)
+        .withFrameRate(frameRate);
   }
 }
