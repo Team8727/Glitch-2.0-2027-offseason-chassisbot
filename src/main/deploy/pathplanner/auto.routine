@@ -1,0 +1,15 @@
+{
+  "version": "2025.0",
+  "startingPose": {
+    "translation": {"x": 0.0, "y": 0.0},
+    "rotation": {"radians": 0.0}
+  },
+  "commands": [
+    {
+      "type": "path",
+      "data": {
+        "pathName": "pathplanner/forward.path"
+      }
+    }
+  ]
+}
