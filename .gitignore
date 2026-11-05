@@ -1,0 +1,26 @@
+# --- Gradle ---
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+bin/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- WPILib ---
+simgui.ini
+simgui*.json
+networktables.json
+ctre_sim/
+logs/
+*.swo
+*.swp
