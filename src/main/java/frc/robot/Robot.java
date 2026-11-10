@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-import dev.doglog.DogLog;
-import dev.doglog.DogLogOptions;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -51,26 +49,14 @@ public class Robot extends TimedRobot {
     // Log DS state.
     DriverStation.startDataLog(DataLogManager.getLog());
 
-    // DogLog for structured WPILOG + NT-mirrored logging (same as the 2026 bot).
-    DogLog.setOptions(
-        new DogLogOptions()
-            .withCaptureDs(true)
-            .withCaptureNt(true)
-            .withLogExtras(true)
-            .withNtPublish(true));
-    DogLog.setEnabled(true);
-    DogLog.log("Robot/RIO Serial Number", RobotController.getSerialNumber());
+    // Log RIO serial for field log triage (used by the 2026/2027 robot logs).
+    DriverStation.reportWarning("RIO serial: " + RobotController.getSerialNumber(), false);
 
     // Serve src/main/deploy over HTTP so Elastic can fetch the remote layout
     // (File > Load Layout From Robot / Ctrl+D). The layout must live at
     // src/main/deploy/elastic-layout.json. Fixes "Elastic can't find the layout"
     // NT connection issues: Elastic loads it straight from the robot.
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
-
-    // Publish loop-overrun / status info that the Elastic "Robot Status" tab shows.
-    CommandScheduler.getInstance()
-        .onCommandInitialize(
-            c -> DogLog.log("Commands/Initialize/" + c.getName(), true));
 
     // Dashboard command to reset the field-centric forward heading (Auto Setup tab).
     var zeroGyro =

@@ -1,139 +1,81 @@
 package frc.robot;
 
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.util.FileVersionException;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import com.ctre.phoenix6.swerve.SwerveModule;
+import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Drivetrain.CTRESwerveDrivetrain;
-import org.json.simple.parser.ParseException;
+import frc.robot.Drivetrain.TunerConstants;
 
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import static edu.wpi.first.wpilibj2.command.Commands.runOnce;
-import static edu.wpi.first.wpilibj2.command.Commands.sequence;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 /**
- * Handles the selection and execution of autonomous routines.
+ * Autonomous routine selection for the SystemCore (2027 alpha) build.
  *
- * <p>Loads PathPlanner paths from {@code deploy/pathplanner/paths}, publishes a
- * dashboard chooser (with mirrored variants), and resets the drivetrain pose to
- * each path's starting position before following it.
+ * <p>PathPlanner has no 2027 alpha release yet, so these are simple, robust
+ * drive-only routines composed from CTRE swerve requests + timers. They cover
+ * the REBUILT "leave" behavior a drive-only chassisbot needs, and are easy to
+ * extend into full autos once the 2027 auto ecosystem lands.
  */
 public class Autos {
-  private final LinkedHashMap<String, PathPlannerPath> paths = new LinkedHashMap<>();
+
   private final CTRESwerveDrivetrain drivetrain;
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
-  /**
-   * The list of autonomous path names to load and add to the auto chooser.
-   * The first item in this list is set as the default option.
-   */
-  private static final List<String> AUTO_NAMES =
-      List.of("Leave", "CenterLeave", "test", "drive test");
+  private static final double MAX_SPEED =
+      TunerConstants.kSpeedAt12Volts.in(edu.wpi.first.units.Units.MetersPerSecond);
 
   /**
-   * Constructs an Autos object to manage autonomous routines.
+   * Constructs an Autos instance for drive-only command autos.
    *
-   * @param drivetrain The swerve drivetrain used for autonomous movement and path following.
+   * @param drivetrain The swerve drivetrain used for autonomous movement.
    */
   public Autos(CTRESwerveDrivetrain drivetrain) {
     this.drivetrain = drivetrain;
-
-    loadPaths();
     setupAutoChooser();
-
     SmartDashboard.putData("Auto choices", autoChooser);
   }
 
-  /**
-   * Loads all autonomous paths from the deploy directory into the paths map.
-   */
-  private void loadPaths() {
-    AUTO_NAMES.forEach(this::loadPath);
+  private void setupAutoChooser() {
+    autoChooser.setDefaultOption("Do Nothing", Commands.none());
+    autoChooser.addOption("Leave (straight)", leaveStraight(2.0));
+    autoChooser.addOption("Leave (slow)", leaveStraight(3.0));
+    autoChooser.addOption("Leave + Curve", leaveCurve(2.5));
   }
 
   /**
-   * Loads a specific path from the given path name.
-   *
-   * @param pathName The name of the path file to load.
+   * Drives straight forward at {@code seconds} at 40% speed. Field-centric, so
+   * direction depends on the alliance perspective at auto start.
    */
-  private void loadPath(String pathName) {
-    try {
-      paths.put(pathName, PathPlannerPath.fromPathFile(pathName));
-    } catch (IOException | ParseException e) {
-      e.printStackTrace();
-    } catch (FileVersionException e) {
-      DriverStation.reportError(
-          "Path '" + pathName + "' was saved with an incompatible PathPlanner version: " + e.getMessage(),
-          e.getStackTrace());
-    }
+  private Command leaveStraight(double seconds) {
+    var request =
+        new SwerveRequest.FieldCentric()
+            .withDeadband(MAX_SPEED * 0.05)
+            .withRotationalDeadband(RotationsPerSecond.of(0.1).in(edu.wpi.first.units.Units.RadiansPerSecond))
+            .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage)
+            .withVelocityX(MAX_SPEED * 0.4) // forward
+            .withVelocityY(0)
+            .withRotationalRate(0);
+    return drivetrain.applyRequest(() -> request).withTimeout(seconds);
   }
 
-  /**
-   * Sets up the autonomous command chooser for the SmartDashboard.
-   * This populates the chooser with each path and its mirrored version.
-   */
-  public void setupAutoChooser() {
-    boolean first = true;
-    for (var entry : paths.entrySet()) {
-      PathPlannerPath path = entry.getValue();
-      if (path == null) {
-        continue;
-      }
-      Command nonMirrored = followPathFromStartPose(path, false);
-      Command mirrored = followPathFromStartPose(path, true);
-      if (first) {
-        autoChooser.setDefaultOption(entry.getKey(), nonMirrored);
-        first = false;
-      } else {
-        autoChooser.addOption(entry.getKey(), nonMirrored);
-      }
-      autoChooser.addOption(entry.getKey() + " Mirrored", mirrored);
-    }
+  /** Drives forward while curving to the side, useful for pathing off the line. */
+  private Command leaveCurve(double seconds) {
+    var request =
+        new SwerveRequest.FieldCentric()
+            .withDeadband(MAX_SPEED * 0.05)
+            .withRotationalDeadband(RotationsPerSecond.of(0.1).in(edu.wpi.first.units.Units.RadiansPerSecond))
+            .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage)
+            .withVelocityX(MAX_SPEED * 0.4)
+            .withVelocityY(MAX_SPEED * 0.2)
+            .withRotationalRate(0);
+    return drivetrain.applyRequest(() -> request).withTimeout(seconds);
   }
 
-  /**
-   * Retrieves the currently selected autonomous command from the dashboard chooser.
-   *
-   * @return The selected autonomous {@link Command}.
-   */
+  /** Retrieves the currently selected autonomous command from the dashboard chooser. */
   public Command getAutonomousCommand() {
     return autoChooser.getSelected();
-  }
-
-  /**
-   * Follows a PathPlanner path starting from its initial pose.
-   *
-   * @param path   The {@link PathPlannerPath} to follow.
-   * @param mirror Whether to mirror the path based on the alliance side.
-   * @return A command that resets the robot's pose to the path's start and then follows the path.
-   */
-  public Command followPathFromStartPose(PathPlannerPath path, boolean mirror) {
-    PathPlannerPath finalPath = mirror ? path.mirrorPath() : path;
-    return sequence(
-        runOnce(() -> setStartPose(finalPath)),
-        AutoBuilder.followPath(finalPath));
-  }
-
-  /**
-   * Resets the robot's pose to the starting position of the given path,
-   * accounting for alliance color when determining the initial pose.
-   *
-   * @param path The path to extract the starting pose from.
-   */
-  private void setStartPose(PathPlannerPath path) {
-    Pose2d startPose =
-        DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-            ? path.flipPath().getStartingHolonomicPose().orElse(path.getStartingDifferentialPose())
-            : path.getStartingHolonomicPose().orElse(path.getStartingDifferentialPose());
-
-    drivetrain.resetPose(startPose);
   }
 }
