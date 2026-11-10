@@ -4,9 +4,14 @@
 
 package frc.robot;
 
+import dev.doglog.DogLog;
+import dev.doglog.DogLogOptions;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -37,7 +42,7 @@ public class Robot extends TimedRobot {
   public Robot() {
     drivetrain.setVision(vision);
 
-    // Log to a data file using WPILib's DataLogManager.
+    // Log to a data file using WPILib's DataLogManager (baseline, always on).
     DataLogManager.start();
 
     // Log the NetworkTables data to the log file.
@@ -45,6 +50,34 @@ public class Robot extends TimedRobot {
 
     // Log DS state.
     DriverStation.startDataLog(DataLogManager.getLog());
+
+    // DogLog for structured WPILOG + NT-mirrored logging (same as the 2026 bot).
+    DogLog.setOptions(
+        new DogLogOptions()
+            .withCaptureDs(true)
+            .withCaptureNt(true)
+            .withLogExtras(true)
+            .withNtPublish(true));
+    DogLog.setEnabled(true);
+    DogLog.log("Robot/RIO Serial Number", RobotController.getSerialNumber());
+
+    // Serve src/main/deploy over HTTP so Elastic can fetch the remote layout
+    // (File > Load Layout From Robot / Ctrl+D). The layout must live at
+    // src/main/deploy/elastic-layout.json. Fixes "Elastic can't find the layout"
+    // NT connection issues: Elastic loads it straight from the robot.
+    WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
+
+    // Publish loop-overrun / status info that the Elastic "Robot Status" tab shows.
+    CommandScheduler.getInstance()
+        .onCommandInitialize(
+            c -> DogLog.log("Commands/Initialize/" + c.getName(), true));
+
+    // Dashboard command to reset the field-centric forward heading (Auto Setup tab).
+    var zeroGyro =
+        drivetrain.runOnce(drivetrain::seedFieldCentric)
+            .withName("Zero Gyro")
+            .ignoringDisable(true);
+    edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putData("Zero Gyro", zeroGyro);
   }
 
   /**
@@ -58,6 +91,28 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods. This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+
+    // --- Elastic dashboard telemetry (topics consumed by elastic-layout.json) ---
+    var nt = edu.wpi.first.networktables.NetworkTableInstance.getDefault();
+    var table = nt.getTable("SmartDashboard");
+
+    table.getEntry("Match Time").setDouble(DriverStation.getMatchTime());
+    table.getEntry("Battery Voltage").setDouble(RobotController.getBatteryVoltage());
+    table.getEntry("Alliance").setBoolean(isRedAlliance());
+
+    var pose = drivetrain.getRobotPose();
+    table.getEntry("Drive Pose X").setDouble(pose.getX());
+    table.getEntry("Drive Pose Y").setDouble(pose.getY());
+    table.getEntry("Drive Pose Heading").setDouble(pose.getRotation().getDegrees());
+    table.getEntry("Vision Measurements").setDouble(drivetrain.getLastVisionMeasurementCount());
+    table.getEntry("Vision Cameras").setDouble(2);
+    // CAN bus utilization from the CANivore (0-100%).
+    try {
+      table.getEntry("CAN Bus Usage")
+          .setDouble(TunerConstants.kCANBus.getStatus().BusUtilization * 100.0);
+    } catch (Exception unused) {
+      table.getEntry("CAN Bus Usage").setDouble(0.0);
+    }
   }
 
   /** This function is called once each time the robot enters Disabled mode. */

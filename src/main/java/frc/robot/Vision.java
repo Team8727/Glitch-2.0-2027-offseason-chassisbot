@@ -30,8 +30,8 @@ import java.util.Optional;
 /**
  * Robot-layer Vision configuration and facade.
  *
- * <p>Owns the AprilTag field layout, both PhotonVision cameras (FrontLeft /
- * FrontRight on the Rubik Pi coprocessor), their robot-to-camera transforms, and
+ * <p>Owns the AprilTag field layout, both PhotonVision cameras (FrontL /
+ * FrontR on the Rubik Pi coprocessor), their robot-to-camera transforms, and
  * the quality filters applied before measurements are fused into the CTRE pose
  * estimator by {@code CTRESwerveDrivetrain}. Produces a real provider backed by
  * PhotonVision on the Rubik Pi, and an in-code simulated provider when running
@@ -47,8 +47,8 @@ public class Vision implements AutoCloseable {
    */
   public record Measurement(Pose2d pose, double timestampSeconds) {}
 
-  private static final String CAM_FRONT_RIGHT = "FrontRight";
-  private static final String CAM_FRONT_LEFT = "FrontLeft";
+  private static final String CAM_FRONT_RIGHT = "FrontR";
+  private static final String CAM_FRONT_LEFT = "FrontL";
 
   // VERIFY (bench): camera names must match the PhotonVision dashboard on the
   // Rubik Pi, and these transforms must match how the cameras are physically mounted.

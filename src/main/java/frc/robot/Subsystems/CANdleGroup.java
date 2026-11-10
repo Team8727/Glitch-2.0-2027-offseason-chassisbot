@@ -1,0 +1,76 @@
+package frc.robot.Subsystems;
+
+import com.ctre.phoenix6.configs.CANdleConfiguration;
+import com.ctre.phoenix6.controls.ControlRequest;
+import com.ctre.phoenix6.controls.EmptyAnimation;
+import com.ctre.phoenix6.controls.SolidColor;
+import com.ctre.phoenix6.hardware.CANdle;
+import com.ctre.phoenix6.signals.Enable5VRailValue;
+import com.ctre.phoenix6.signals.LossOfSignalBehaviorValue;
+import com.ctre.phoenix6.signals.RGBWColor;
+import com.ctre.phoenix6.signals.StripTypeValue;
+
+/**
+ * Group of CANdle devices driven identically.
+ *
+ * <p>Port of Lynk 9496's {@code CANdleGroup} (MIT, Copyright (c) 2026 LYNK 9496).
+ * Wraps one or more Phoenix 6 CANdles so a single call drives them all; used by
+ * the software {@link CustomFireAnimation} to avoid per-call log spam.
+ */
+public class CANdleGroup {
+  private CANdle[] candles;
+  private final ControlRequest clearAnimation = new EmptyAnimation(0);
+
+  public CANdleGroup(CANdle... candles) {
+    this.candles = candles;
+    applyConfigs();
+  }
+
+  private void applyConfigs() {
+    CANdleConfiguration config = new CANdleConfiguration();
+    config.LED.BrightnessScalar = LEDSubsystem.BRIGHTNESS_SCALAR;
+    config.LED.StripType = LEDSubsystem.STRIP_TYPE;
+    config.LED.LossOfSignalBehavior = LossOfSignalBehaviorValue.KeepRunning;
+    config.CANdleFeatures.Enable5VRail = Enable5VRailValue.Enabled;
+
+    for (CANdle candle : candles) {
+      candle.getConfigurator().apply(config);
+    }
+  }
+
+  /** Pass an animation {@link ControlRequest} through to every CANdle. */
+  public void animate(ControlRequest animation) {
+    for (CANdle candle : candles) {
+      candle.setControl(animation);
+    }
+  }
+
+  /**
+   * Pass a {@link ControlRequest} through to every CANdle without logging.
+   *
+   * <p>Intended for high-frequency callers (e.g. software animations) where a
+   * per-call log message would flood the log. The caller is responsible for
+   * choosing an appropriate UpdateFreqHz on the request.
+   */
+  public void setControl(ControlRequest request) {
+    for (CANdle candle : candles) {
+      candle.setControl(request);
+    }
+  }
+
+  public void clearAnimation() {
+    for (CANdle candle : candles) {
+      candle.setControl(clearAnimation);
+    }
+  }
+
+  public void setLEDs(RGBWColor color, int startIdx, int count) {
+    for (CANdle candle : candles) {
+      candle.setControl(new SolidColor(startIdx, startIdx + count - 1).withColor(color));
+    }
+  }
+
+  public void setLEDs(int r, int g, int b, int w, int startIdx, int count) {
+    setLEDs(new RGBWColor(r, g, b, w), startIdx, count);
+  }
+}

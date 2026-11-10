@@ -44,9 +44,9 @@ public class TunerConstants {
     // This affects the PID/FF gains for the drive motors
     private static final ClosedLoopOutputType kDriveClosedLoopOutput = ClosedLoopOutputType.Voltage;
 
-    // The type of motor used for the drive motor
+    // The type of motor used for the drive motor: Kraken X60 (TalonFX integrated).
     private static final DriveMotorArrangement kDriveMotorType = DriveMotorArrangement.TalonFX_Integrated;
-    // The type of motor used for the steer motor
+    // The type of motor used for the steer motor: Kraken X44 (TalonFX integrated).
     private static final SteerMotorArrangement kSteerMotorType = SteerMotorArrangement.TalonFX_Integrated;
 
     // The remote sensor feedback type to use for the steer motors;
@@ -86,22 +86,25 @@ public class TunerConstants {
     // ---------------------------------------------------------------
     // VERIFY (bench): Drivetrain geometry, gear ratios and CAN layout
     // ---------------------------------------------------------------
-    // All swerve devices share the roboRIO construction CAN bus.
-    public static final CANBus kCANBus = new CANBus();
+    // All swerve devices, the Pigeon 2 and the CANdle live on the CANivore
+    // (USB to the RIO). "canivore" is the default name Tuner X assigns; if the
+    // CANivore was renamed in Tuner X, change this string to match exactly.
+    public static final CANBus kCANBus = new CANBus("canivore");
 
-    // VERIFY (bench): installed MK5n drive pinion. MK5n options are nominally
-    // fast ~5.36 / standard ~6.12 / slow ~7.36; the 2026 robot used 7.03125
-    // with a 2 in wheel. Set this to the ratio stamped on the installed pinion.
-    private static final double kDriveGearRatio = 6.12;
+    // MK5n drive pinion, R1 (fast). SDS publishes R1=(54/12)*(25/32)*(30/15)=7.03125
+    // with a 2 in radius (4 in diameter) wheel. Set to the ratio stamped on the
+    // installed pinion (R2 = 6.0268, R3 = 5.2734) if a different pinion is fitted.
+    private static final double kDriveGearRatio = 7.03125;
     // MK5n steering ratio is fixed at 287:11 (~26.09:1).
     private static final double kSteerGearRatio = 26.09090909090909;
-    // VERIFY (bench): drives per rotation of the azimuth.
+    // Drives per rotation of the azimuth (MK5n spec).
     private static final double kCoupleRatio = 4.5;
     // VERIFY (bench): wheel diameter / 2 for the installed wheel.
     private static final Distance kWheelRadius = Inches.of(2);
 
     // VERIFY (bench): theoretical free speed (m/s) at 12 V applied output.
-    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(5.0);
+    // Kraken X60 at R1: ~14 ft/s (4.3 m/s) is a good starting estimate.
+    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(4.5);
 
     private static final boolean kInvertLeftSide = false;
     private static final boolean kInvertRightSide = true;

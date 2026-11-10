@@ -35,7 +35,8 @@ public class Autos {
    * The list of autonomous path names to load and add to the auto chooser.
    * The first item in this list is set as the default option.
    */
-  private static final List<String> AUTO_NAMES = List.of("test", "drive test");
+  private static final List<String> AUTO_NAMES =
+      List.of("Leave", "CenterLeave", "test", "drive test");
 
   /**
    * Constructs an Autos object to manage autonomous routines.
