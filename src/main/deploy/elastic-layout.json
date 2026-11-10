@@ -1,0 +1,494 @@
+{
+  "version": 1.0,
+  "grid_size": 128,
+  "tabs": [
+    {
+      "name": "Driver",
+      "grid_layout": {
+        "layouts": [
+          {
+            "title": "Drive",
+            "x": 640,
+            "y": 0,
+            "width": 256,
+            "height": 384,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "TOP"
+            },
+            "children": [
+              {
+                "title": "Speed (m/s)",
+                "x": 0,
+                "y": 0,
+                "width": 256,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Drive/SpeedMps",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "Heading (deg)",
+                "x": 0,
+                "y": 0,
+                "width": 256,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Drive/HeadingDeg",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "Pose X (m)",
+                "x": 0,
+                "y": 0,
+                "width": 256,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Drive/PoseX",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "Pose Y (m)",
+                "x": 0,
+                "y": 0,
+                "width": 256,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Drive/PoseY",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "Odometry (Hz)",
+                "x": 0,
+                "y": 0,
+                "width": 256,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Drive/OdometryHz",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "Vision Active",
+                "x": 0,
+                "y": 0,
+                "width": 256,
+                "height": 64,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Elastic/Vision/Active",
+                  "period": 0.033,
+                  "true_color": 4278255615,
+                  "false_color": 4294901760,
+                  "true_icon": "Checkmark",
+                  "false_icon": "X"
+                }
+              }
+            ]
+          }
+        ],
+        "containers": [
+          {
+            "title": "Field",
+            "x": 0,
+            "y": 0,
+            "width": 640,
+            "height": 512,
+            "type": "Field",
+            "properties": {
+              "topic": "/SmartDashboard/Field",
+              "period": 0.033,
+              "field_game": "Rebuilt",
+              "robot_width": 0.818,
+              "robot_length": 0.818,
+              "show_other_objects": true,
+              "show_trajectories": true,
+              "field_rotation": 0.0,
+              "robot_color": 4294198070,
+              "trajectory_color": 4294967295,
+              "show_robot_outside_widget": true
+            }
+          },
+          {
+            "title": "Battery",
+            "x": 896,
+            "y": 0,
+            "width": 256,
+            "height": 128,
+            "type": "Voltage View",
+            "properties": {
+              "topic": "/Elastic/Robot/BatteryVolts",
+              "period": 0.033,
+              "min_value": 4.0,
+              "max_value": 13.0,
+              "divisions": 9,
+              "inverted": false,
+              "orientation": "horizontal"
+            }
+          },
+          {
+            "title": "Auto Chooser",
+            "x": 896,
+            "y": 128,
+            "width": 384,
+            "height": 128,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auto choices",
+              "period": 0.5,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "Match Time",
+            "x": 896,
+            "y": 256,
+            "width": 256,
+            "height": 128,
+            "type": "Match Time",
+            "properties": {
+              "topic": "/FMSInfo/MatchTime",
+              "period": 0.033,
+              "time_display_mode": "Minutes and Seconds",
+              "red_start_time": 15,
+              "yellow_start_time": 30
+            }
+          },
+          {
+            "title": "FMS Info",
+            "x": 896,
+            "y": 384,
+            "width": 384,
+            "height": 128,
+            "type": "FMSInfo",
+            "properties": {
+              "topic": "/FMSInfo",
+              "period": 0.033
+            }
+          },
+          {
+            "title": "Speed Graph (15s)",
+            "x": 0,
+            "y": 512,
+            "width": 384,
+            "height": 256,
+            "type": "Graph",
+            "properties": {
+              "topic": "/Elastic/Drive/SpeedMps",
+              "period": 0.1,
+              "time_displayed": 15.0,
+              "color": 4278238420,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Battery Graph (30s)",
+            "x": 384,
+            "y": 512,
+            "width": 384,
+            "height": 256,
+            "type": "Graph",
+            "properties": {
+              "topic": "/Elastic/Robot/BatteryVolts",
+              "period": 0.1,
+              "time_displayed": 30.0,
+              "color": 4294901760,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Command Scheduler",
+            "x": 768,
+            "y": 512,
+            "width": 384,
+            "height": 256,
+            "type": "Scheduler",
+            "properties": {
+              "topic": "/Scheduler",
+              "period": 0.033
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Diagnostics",
+      "grid_layout": {
+        "layouts": [
+          {
+            "title": "Health",
+            "x": 0,
+            "y": 0,
+            "width": 384,
+            "height": 384,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "TOP"
+            },
+            "children": [
+              {
+                "title": "Battery (V)",
+                "x": 0,
+                "y": 0,
+                "width": 384,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Robot/BatteryVolts",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "Loop Time (ms)",
+                "x": 0,
+                "y": 0,
+                "width": 384,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Robot/LoopTimeMs",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "Odometry (Hz)",
+                "x": 0,
+                "y": 0,
+                "width": 384,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Drive/OdometryHz",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "Omega (deg/s)",
+                "x": 0,
+                "y": 0,
+                "width": 384,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Drive/OmegaDegPerSec",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "LED State",
+                "x": 0,
+                "y": 0,
+                "width": 384,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/LED/State",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              }
+            ]
+          },
+          {
+            "title": "Vision",
+            "x": 384,
+            "y": 0,
+            "width": 384,
+            "height": 384,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "TOP"
+            },
+            "children": [
+              {
+                "title": "Vision Active",
+                "x": 0,
+                "y": 0,
+                "width": 384,
+                "height": 64,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Elastic/Vision/Active",
+                  "period": 0.033,
+                  "true_color": 4278255615,
+                  "false_color": 4294901760
+                }
+              },
+              {
+                "title": "Accepted Measurements",
+                "x": 0,
+                "y": 0,
+                "width": 384,
+                "height": 64,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Elastic/Vision/AcceptedMeasurements",
+                  "period": 0.033,
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "Front Left",
+                "x": 0,
+                "y": 0,
+                "width": 384,
+                "height": 64,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Elastic/Vision/FrontLeftConnected",
+                  "period": 0.033,
+                  "true_color": 4278255615,
+                  "false_color": 4294901760
+                }
+              },
+              {
+                "title": "Front Right",
+                "x": 0,
+                "y": 0,
+                "width": 384,
+                "height": 64,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Elastic/Vision/FrontRightConnected",
+                  "period": 0.033,
+                  "true_color": 4278255615,
+                  "false_color": 4294901760
+                }
+              }
+            ]
+          }
+        ],
+        "containers": [
+          {
+            "title": "Loop Time Graph (15s)",
+            "x": 768,
+            "y": 0,
+            "width": 384,
+            "height": 256,
+            "type": "Graph",
+            "properties": {
+              "topic": "/Elastic/Robot/LoopTimeMs",
+              "period": 0.033,
+              "time_displayed": 15.0,
+              "color": 4286611456,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Omega Graph (15s)",
+            "x": 768,
+            "y": 256,
+            "width": 384,
+            "height": 256,
+            "type": "Graph",
+            "properties": {
+              "topic": "/Elastic/Drive/OmegaDegPerSec",
+              "period": 0.1,
+              "time_displayed": 15.0,
+              "color": 4278238420,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Command Scheduler",
+            "x": 0,
+            "y": 384,
+            "width": 384,
+            "height": 256,
+            "type": "Scheduler",
+            "properties": {
+              "topic": "/Scheduler",
+              "period": 0.033
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Autos",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "Auto Chooser",
+            "x": 0,
+            "y": 0,
+            "width": 384,
+            "height": 128,
+            "type": "Split Button Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auto choices",
+              "period": 0.5
+            }
+          },
+          {
+            "title": "Field",
+            "x": 384,
+            "y": 0,
+            "width": 768,
+            "height": 640,
+            "type": "Field",
+            "properties": {
+              "topic": "/SmartDashboard/Field",
+              "period": 0.033,
+              "field_game": "Rebuilt",
+              "robot_width": 0.818,
+              "robot_length": 0.818,
+              "show_other_objects": true,
+              "show_trajectories": true,
+              "field_rotation": 0.0,
+              "robot_color": 4294198070,
+              "trajectory_color": 4294967295,
+              "show_robot_outside_widget": true
+            }
+          },
+          {
+            "title": "Command Scheduler",
+            "x": 0,
+            "y": 128,
+            "width": 384,
+            "height": 256,
+            "type": "Scheduler",
+            "properties": {
+              "topic": "/Scheduler",
+              "period": 0.033
+            }
+          },
+          {
+            "title": "Match Time",
+            "x": 0,
+            "y": 384,
+            "width": 384,
+            "height": 128,
+            "type": "Match Time",
+            "properties": {
+              "topic": "/FMSInfo/MatchTime",
+              "period": 0.033,
+              "time_display_mode": "Minutes and Seconds",
+              "red_start_time": 15,
+              "yellow_start_time": 30
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
