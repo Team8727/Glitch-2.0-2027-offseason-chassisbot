@@ -45,7 +45,6 @@ public class StatusLEDs extends SubsystemBase {
     private static final RGBWColor BLUE = new RGBWColor(15, 45, 230);
     private static final RGBWColor CYAN_SPARK = new RGBWColor(150, 220, 255);
     private static final RGBWColor RED = new RGBWColor(220, 0, 0);
-    private static final RGBWColor MAGENTA = new RGBWColor(180, 0, 180);
 
     private final CANdle candle;
     private final ColorFlowAnimation baseFlow =
@@ -141,8 +140,7 @@ public class StatusLEDs extends SubsystemBase {
         boolean sparkle = effective == State.AUTONOMOUS
                 || effective == State.TELEOP_VISION
                 || effective == State.TELEOP_ODOMETRY;
-        sparks.withColor(
-                !sparkle ? new RGBWColor() : effective == State.FAULT ? MAGENTA : CYAN_SPARK);
+        sparks.withColor(sparkle ? CYAN_SPARK : color);
         sparks.withMaxLEDsOnProportion(0.28);
 
         lastWriteHealthy = candle.setControl(baseFlow) == StatusCode.OK
