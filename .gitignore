@@ -24,3 +24,6 @@ ctre_sim/
 logs/
 *.swo
 *.swp
+
+# --- Generated at build time (writeGitInfo) ---
+src/main/deploy/version.txt
