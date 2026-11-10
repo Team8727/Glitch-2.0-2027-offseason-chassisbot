@@ -61,6 +61,17 @@ public class Robot extends TimedRobot {
     DogLog.setEnabled(true);
     DogLog.log("Robot/RIO Serial Number", RobotController.getSerialNumber());
 
+    // Log which code is actually running (git hash stamped by writeGitInfo task).
+    try {
+      var versionFile =
+          Filesystem.getDeployDirectory().toPath().resolve("version.txt");
+      DogLog.log(
+          "Robot/Code Version",
+          java.nio.file.Files.readString(versionFile).trim());
+    } catch (Exception unused) {
+      DogLog.log("Robot/Code Version", "unknown (build without writeGitInfo?)");
+    }
+
     // Serve src/main/deploy over HTTP so Elastic can fetch the remote layout
     // (File > Load Layout From Robot / Ctrl+D). The layout must live at
     // src/main/deploy/elastic-layout.json. Fixes "Elastic can't find the layout"

@@ -101,6 +101,40 @@ deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
 
+// Stamp the git describe hash into deploy/version.txt so the robot can log
+// exactly which commit is running. Mirrors Lynk 9496's writeGitInfo recipe.
+tasks.register("writeGitInfo") {
+    def outFile = file("$projectDir/src/main/deploy/version.txt")
+
+    // 1. Force the task to run every single time
+    outputs.upToDateWhen { false }
+
+    doLast {
+        outFile.parentFile.mkdirs()
+
+        def stdout = new ByteArrayOutputStream()
+
+        exec {
+            commandLine 'git', 'describe', '--tags', '--always', '--dirty'
+            standardOutput = stdout
+            ignoreExitValue = true
+        }
+
+        def newGitHash = stdout.toString().trim()
+
+        // 2. Only write to the file if the content actually changed.
+        // This preserves the file's modification timestamp if the hash is the
+        // same, which prevents the Jar task from needlessly rebuilding.
+        if (!outFile.exists() || outFile.text != newGitHash) {
+            outFile.text = newGitHash
+        }
+    }
+}
+
+// Ensure the task runs as part of the build
+tasks.named('jar') { dependsOn tasks.named('writeGitInfo') }
+tasks.named('assemble') { dependsOn tasks.named('writeGitInfo') }
+
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
     options.compilerArgs.add '-XDstringConcat=inline'
