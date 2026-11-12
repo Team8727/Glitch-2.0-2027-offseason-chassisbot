@@ -1,3 +1,8 @@
 plugins {
-    id "edu.wpi.first.GradleRIO" version "2026.2.1"
+    id "edu.wpi.first.GradleRIO" version "2027.1.1-beta1"
 }
+
+// SystemCore toolchain required:
+// Run ./gradlew installSystemcoreToolchain before deploying
+
+// JDK 25 required: https://adoptium.net/temurin/releases/?version=25
