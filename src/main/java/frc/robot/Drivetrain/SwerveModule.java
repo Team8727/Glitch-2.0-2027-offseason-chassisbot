@@ -16,6 +16,7 @@ import com.revrobotics.SparkPIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.Timer;
 
 public class SwerveModule {
     private final CANSparkMax driveMotor;
@@ -23,6 +24,7 @@ public class SwerveModule {
     private final CANcoder cancoder;
     private final SparkPIDController drivePID;
     private final SparkPIDController steerPID;
+    private final String moduleName;
 
     private final double cancoderOffset;
     private boolean initialized = false;
@@ -31,9 +33,11 @@ public class SwerveModule {
     public SwerveModule(
             int driveID, int steerID, int cancoderID,
             double cancoderOffset,
-            boolean driveInverted, boolean steerInverted, boolean encoderInverted) {
+            boolean driveInverted, boolean steerInverted, boolean encoderInverted,
+            String name) {
 
         this.cancoderOffset = cancoderOffset;
+        this.moduleName = name;
 
         driveMotor = new CANSparkMax(driveID, MotorType.kBrushless);
         driveMotor.restoreFactoryDefaults();
@@ -71,7 +75,7 @@ public class SwerveModule {
         steerPID.setOutputRange(-1.0, 1.0);
         steerMotor.burnFlash();
 
-        cancoder = new CANcoder(cancoderID, CAN_BUS_NAME);
+        cancoder = new CANcoder(cancoderID, CANIVORE_BUS);
         CANcoderConfiguration config = new CANcoderConfiguration();
         config.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
         config.MagnetSensor.SensorDirection = encoderInverted
@@ -84,6 +88,7 @@ public class SwerveModule {
         if (initialized) return;
         initialized = true;
 
+        Timer.delay(0.1);
         double absoluteRot = cancoder.getAbsolutePosition().getValueAsDouble();
         double zeroed = absoluteRot - cancoderOffset;
         zeroed = normalizeRotations(zeroed);
@@ -116,6 +121,22 @@ public class SwerveModule {
 
     public SwerveModuleState getTargetState() {
         return targetState;
+    }
+
+    public double getDriveCurrent() {
+        return driveMotor.getOutputCurrent();
+    }
+
+    public double getSteerCurrent() {
+        return steerMotor.getOutputCurrent();
+    }
+
+    public double getDriveTemperature() {
+        return driveMotor.getMotorTemperature();
+    }
+
+    public String getModuleName() {
+        return moduleName;
     }
 
     public void stop() {

@@ -1,0 +1,10 @@
+.gradle/
+build/
+*.DS_Store
+bin/
+*.class
+.idea/
+*.iml
+.vscode/settings.json
+.wpilib/
+sim/

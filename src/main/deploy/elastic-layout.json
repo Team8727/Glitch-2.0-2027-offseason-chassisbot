@@ -1,0 +1,341 @@
+{
+  "version": 1,
+  "tabs": [
+    {
+      "name": "Driver",
+      "widgets": [
+        {
+          "type": "Field2d",
+          "width": 6,
+          "height": 6,
+          "x": 0,
+          "y": 0,
+          "properties": {
+            "field_image": "2026-field.png",
+            "robot_width": 0.85,
+            "robot_length": 0.85
+          }
+        },
+        {
+          "type": "Swerve Drive",
+          "width": 6,
+          "height": 4,
+          "x": 8,
+          "y": 0,
+          "properties": {
+            "source": "drivetrain/swerve/modules"
+          }
+        },
+        {
+          "type": "Camera Stream",
+          "width": 4,
+          "height": 4,
+          "x": 8,
+          "y": 4,
+          "properties": {
+            "stream_url": "http://photonvision.local:1181/stream.mjpg",
+            "rotation": "NONE"
+          }
+        },
+        {
+          "type": "Number Bar",
+          "width": 4,
+          "height": 1,
+          "x": 0,
+          "y": 6,
+          "properties": {
+            "source": "drivetrain/gyro/yaw",
+            "min": -180,
+            "max": 180,
+            "center": 0,
+            "unit": "deg"
+          }
+        },
+        {
+          "type": "Boolean Box",
+          "width": 1.5,
+          "height": 1,
+          "x": 4,
+          "y": 6,
+          "properties": {
+            "source": "vision/hasTargets",
+            "true_color": [0, 255, 0],
+            "false_color": [255, 0, 0]
+          }
+        },
+        {
+          "type": "Text Display",
+          "width": 2,
+          "height": 1,
+          "x": 5.5,
+          "y": 6,
+          "properties": {
+            "source": "drivetrain/pose/x",
+            "unit": "m"
+          }
+        },
+        {
+          "type": "Text Display",
+          "width": 2,
+          "height": 1,
+          "x": 7.5,
+          "y": 6,
+          "properties": {
+            "source": "drivetrain/pose/y",
+            "unit": "m"
+          }
+        },
+        {
+          "type": "Text Display",
+          "width": 2,
+          "height": 1,
+          "x": 9.5,
+          "y": 6,
+          "properties": {
+            "source": "drivetrain/pose/rotation",
+            "unit": "deg"
+          }
+        },
+        {
+          "type": "Large Text",
+          "width": 4,
+          "height": 1,
+          "x": 0,
+          "y": 7,
+          "properties": {
+            "source": "FMSInfo/MatchTime",
+            "unit": "s",
+            "precision": 1
+          }
+        },
+        {
+          "type": "Boolean Box",
+          "width": 1.5,
+          "height": 1,
+          "x": 4,
+          "y": 7,
+          "properties": {
+            "source": "robot/connected",
+            "true_color": [0, 255, 0],
+            "false_color": [255, 0, 0]
+          }
+        },
+        {
+          "type": "Toggle Button",
+          "width": 2.5,
+          "height": 1,
+          "x": 5.5,
+          "y": 7,
+          "properties": {
+            "source": "driver/fieldRelative",
+            "label": "Field Relative"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Swerve Debug",
+      "widgets": [
+        {
+          "type": "List Layout",
+          "width": 3,
+          "height": 4,
+          "x": 0,
+          "y": 0,
+          "properties": {
+            "label": "FL Module",
+            "widgets": [
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 0, "properties": { "source": "drivetrain/module/FL/speed", "unit": "m/s" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 0.5, "properties": { "source": "drivetrain/module/FL/angle", "unit": "deg" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 1, "properties": { "source": "drivetrain/module/FL/current", "unit": "A" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 1.5, "properties": { "source": "drivetrain/module/FL/temp", "unit": "°C" } }
+            ]
+          }
+        },
+        {
+          "type": "List Layout",
+          "width": 3,
+          "height": 4,
+          "x": 3,
+          "y": 0,
+          "properties": {
+            "label": "FR Module",
+            "widgets": [
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 0, "properties": { "source": "drivetrain/module/FR/speed", "unit": "m/s" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 0.5, "properties": { "source": "drivetrain/module/FR/angle", "unit": "deg" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 1, "properties": { "source": "drivetrain/module/FR/current", "unit": "A" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 1.5, "properties": { "source": "drivetrain/module/FR/temp", "unit": "°C" } }
+            ]
+          }
+        },
+        {
+          "type": "List Layout",
+          "width": 3,
+          "height": 4,
+          "x": 6,
+          "y": 0,
+          "properties": {
+            "label": "BL Module",
+            "widgets": [
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 0, "properties": { "source": "drivetrain/module/BL/speed", "unit": "m/s" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 0.5, "properties": { "source": "drivetrain/module/BL/angle", "unit": "deg" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 1, "properties": { "source": "drivetrain/module/BL/current", "unit": "A" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 1.5, "properties": { "source": "drivetrain/module/BL/temp", "unit": "°C" } }
+            ]
+          }
+        },
+        {
+          "type": "List Layout",
+          "width": 3,
+          "height": 4,
+          "x": 9,
+          "y": 0,
+          "properties": {
+            "label": "BR Module",
+            "widgets": [
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 0, "properties": { "source": "drivetrain/module/BR/speed", "unit": "m/s" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 0.5, "properties": { "source": "drivetrain/module/BR/angle", "unit": "deg" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 1, "properties": { "source": "drivetrain/module/BR/current", "unit": "A" } },
+              { "type": "Text Display", "width": 3, "height": 0.5, "x": 0, "y": 1.5, "properties": { "source": "drivetrain/module/BR/temp", "unit": "°C" } }
+            ]
+          }
+        },
+        {
+          "type": "Command",
+          "width": 2,
+          "height": 1,
+          "x": 0,
+          "y": 4,
+          "properties": {
+            "source": "commands/zeroGyro",
+            "label": "Zero Gyro"
+          }
+        },
+        {
+          "type": "Command",
+          "width": 2,
+          "height": 1,
+          "x": 2,
+          "y": 4,
+          "properties": {
+            "source": "commands/toggleFieldRelative",
+            "label": "Toggle Field Relative"
+          }
+        },
+        {
+          "type": "ComboBox Chooser",
+          "width": 6,
+          "height": 1,
+          "x": 4,
+          "y": 4,
+          "properties": {
+            "source": "Auto Chooser",
+            "label": "Auto Routine"
+          }
+        }
+      ]
+    },
+    {
+      "name": "LED Controls",
+      "widgets": [
+        {
+          "type": "ComboBox Chooser",
+          "width": 6,
+          "height": 1,
+          "x": 0,
+          "y": 0,
+          "properties": {
+            "source": "leds/state",
+            "label": "LED State"
+          }
+        },
+        {
+          "type": "Number Slider",
+          "width": 6,
+          "height": 1,
+          "x": 0,
+          "y": 1,
+          "properties": {
+            "source": "leds/brightness",
+            "min": 0,
+            "max": 1,
+            "unit": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vision",
+      "widgets": [
+        {
+          "type": "Camera Stream",
+          "width": 6,
+          "height": 5,
+          "x": 0,
+          "y": 0,
+          "properties": {
+            "stream_url": "http://photonvision.local:1182/stream.mjpg",
+            "rotation": "NONE"
+          }
+        },
+        {
+          "type": "Camera Stream",
+          "width": 6,
+          "height": 5,
+          "x": 6,
+          "y": 0,
+          "properties": {
+            "stream_url": "http://photonvision.local:1183/stream.mjpg",
+            "rotation": "NONE"
+          }
+        },
+        {
+          "type": "Boolean Box",
+          "width": 2,
+          "height": 1,
+          "x": 0,
+          "y": 5,
+          "properties": {
+            "source": "vision/frontLeft/tagCount",
+            "true_color": [0, 255, 0],
+            "false_color": [255, 0, 0]
+          }
+        },
+        {
+          "type": "Boolean Box",
+          "width": 2,
+          "height": 1,
+          "x": 2,
+          "y": 5,
+          "properties": {
+            "source": "vision/frontRight/tagCount",
+            "true_color": [0, 255, 0],
+            "false_color": [255, 0, 0]
+          }
+        },
+        {
+          "type": "Text Display",
+          "width": 2,
+          "height": 1,
+          "x": 4,
+          "y": 5,
+          "properties": {
+            "source": "vision/frontLeft/latencyMs",
+            "unit": "ms"
+          }
+        },
+        {
+          "type": "Text Display",
+          "width": 2,
+          "height": 1,
+          "x": 6,
+          "y": 5,
+          "properties": {
+            "source": "vision/frontRight/latencyMs",
+            "unit": "ms"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Drivetrain.Drivetrain;
 
 public class SwerveDriveCommand extends Command {
@@ -20,7 +21,16 @@ public class SwerveDriveCommand extends Command {
     private boolean headingLockActive = false;
     private double headingSetpoint = 0.0;
 
-    private static final double HEADING_DEADBAND = 0.08;
+    public SwerveDriveCommand(
+            Drivetrain drivetrain,
+            CommandXboxController controller) {
+        this(
+            drivetrain,
+            () -> -controller.getLeftY(),
+            () -> -controller.getLeftX(),
+            () -> -controller.getRightX(),
+            () -> true);
+    }
 
     public SwerveDriveCommand(
             Drivetrain drivetrain,
@@ -44,14 +54,24 @@ public class SwerveDriveCommand extends Command {
     }
 
     @Override
+    public void initialize() {
+        headingLockActive = false;
+    }
+
+    @Override
     public void execute() {
-        double x = applyDeadband(xSupplier.get()) * drivetrain.getMaxLinearSpeed();
-        double y = applyDeadband(ySupplier.get()) * drivetrain.getMaxLinearSpeed();
-        double rot = applyDeadband(rotSupplier.get()) * drivetrain.getMaxAngularSpeed();
+        double rawX = applyDeadband(xSupplier.get());
+        double rawY = applyDeadband(ySupplier.get());
+        double rawRot = applyDeadband(rotSupplier.get());
+
+        // Exponential joystick scaling for fine control at low speeds
+        double x = Math.copySign(rawX * rawX, rawX) * drivetrain.getMaxLinearSpeed() * SPEED_MULTIPLIER;
+        double y = Math.copySign(rawY * rawY, rawY) * drivetrain.getMaxLinearSpeed() * SPEED_MULTIPLIER;
+        double rot = Math.copySign(rawRot * rawRot, rawRot) * drivetrain.getMaxAngularSpeed() * ROTATION_MULTIPLIER;
 
         boolean fieldRelative = fieldRelativeSupplier.get();
 
-        if (Math.abs(rot) < HEADING_DEADBAND * drivetrain.getMaxAngularSpeed()) {
+        if (ENABLE_HEADING_LOCK && Math.abs(rawRot) < HEADING_LOCK_DEADBAND) {
             if (!headingLockActive) {
                 headingLockActive = true;
                 headingSetpoint = drivetrain.getGyroRotation().getRadians();
