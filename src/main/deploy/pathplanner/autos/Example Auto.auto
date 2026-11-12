@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "Example Auto",
+  "type": "sequential",
+  "commands": [
+    {
+      "type": "path",
+      "data": {
+        "pathName": "Example Path"
+      }
+    }
+  ]
+}
