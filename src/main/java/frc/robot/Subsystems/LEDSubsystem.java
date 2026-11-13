@@ -5,7 +5,7 @@
 package frc.robot.Subsystems;
 
 import Glitch.Lib.LEDs.GlitchLEDPatterns;
-import com.ctre.phoenix6.configs.LedStripType;
+import com.ctre.phoenix6.signals.StripTypeValue;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.util.Color;
 
@@ -34,7 +34,7 @@ public class LEDSubsystem extends CandleLEDs {
   public static final double BRIGHTNESS_SCALAR = 0.7;
 
   /** RGB channel order of the physical strip. */
-  public static final LedStripType STRIP_TYPE = LedStripType.kRGB;
+  public static final StripTypeValue STRIP_TYPE = StripTypeValue.RGB;
 
   /** Deep emerald flame body (team green). */
   public static final Color EMERALD = new Color(0, 60, 35);
@@ -72,6 +72,12 @@ public class LEDSubsystem extends CandleLEDs {
    */
   public LEDSubsystem() {
     super(CANDLE_ID, LED_COUNT, BRIGHTNESS_SCALAR, STRIP_TYPE);
+  }
+
+  /** Constructs the production LED behavior with controllable hardware and time for tests. */
+  LEDSubsystem(LedOutput output, java.util.function.LongSupplier clockMicroseconds,
+      java.util.function.Consumer<String> reportError) {
+    super(LED_COUNT, output, clockMicroseconds, reportError);
   }
 
   /** Returns the shared LED subsystem instance. */
