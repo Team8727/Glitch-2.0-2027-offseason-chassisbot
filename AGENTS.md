@@ -2,10 +2,14 @@
 
 ## Repository conventions
 
-- **Never commit or work directly on `main`.** Start a descriptive task branch
-  from the latest `main` (for example, `codex/ci-baseline`) and propose changes
+- **Never commit or work directly on `main`.** Start a task branch named
+  `<developer-name>/<change-theme>` from the latest `main` (for example,
+  `charlie/led-timeout-tests`) and propose changes
   through a pull request. Named exercise branches are experiments, not the
   shared baseline; do not import their unrelated changes.
+- Use the responsible member's name or GitHub handle, including when Kilo or
+  another agent assists. Use lowercase letters, numbers, and hyphens within
+  each part; keep the theme short and specific. Use a new branch for each task.
 - Project conventions otherwise follow the team's 2026 chassisbot repo:
   `frc.robot.Subsystems` for subsystems, `frc.robot.Commands` for commands,
   GlitchLib is consumed as a git submodule and left unmodified.

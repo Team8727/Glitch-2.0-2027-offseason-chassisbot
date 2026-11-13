@@ -38,7 +38,11 @@ prove every vendor native library works on every Mac architecture.
 
 ## Everyday workflow
 
-1. Start a descriptive task branch from the shared `main`.
+1. Start a task branch from the shared `main` using
+   `<developer-name>/<change-theme>`, for example `charlie/led-timeout-tests`
+   or `griffin/ci-reports`. Use the responsible member's name or GitHub handle,
+   including for AI-assisted work. Use lowercase letters, numbers, and hyphens
+   within each part, and a short, specific theme. Create one branch per task.
 2. Write the expected behavior and a failure case in plain language. Ask Kilo
    for tests that demonstrate that contract, then inspect the assertions.
 3. Run a focused test while working:
@@ -61,6 +65,14 @@ prove every vendor native library works on every Mac architecture.
 robot tests. A focused `test --tests ...` run is useful feedback but is not a
 replacement for the full build. Local HTML results are at
 `build/reports/tests/test/index.html`.
+
+The naming pattern is a team convention, not a GitHub requirement. It makes
+ownership and purpose visible. GitHub's
+[branch-name guidance](https://docs.github.com/en/get-started/using-git/dealing-with-special-characters-in-branch-and-tag-names)
+supports using simple characters to avoid shell-escaping problems. Avoid a
+standalone branch named only after a member: `charlie` and `charlie/topic`
+can conflict in Git's reference namespace. Existing branches need not be
+renamed just to adopt this convention for new work.
 
 ## Initial behavior contracts
 
