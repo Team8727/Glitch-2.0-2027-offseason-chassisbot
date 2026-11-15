@@ -4,16 +4,15 @@
 
 package frc.robot.Subsystems;
 
-import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.configs.CandleConfiguration;
-import com.ctre.phoenix6.configs.LedStripType;
-import com.ctre.phoenix6.led.Candle;
+import com.ctre.phoenix6.signals.StripTypeValue;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.AddressableLEDBufferView;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.Consumer;
+import java.util.function.LongSupplier;
 
 import static edu.wpi.first.units.Units.Microseconds;
 import static edu.wpi.first.units.Units.Seconds;
@@ -22,34 +21,36 @@ import static edu.wpi.first.units.Units.Seconds;
  * Abstract base class for a CTRE CANdle-driven LED strip.
  *
  * <p>This class replaces the PWM {@code AddressableLED} layer of GlitchLib's
- * {@code AbstractLEDS} with a Phoenix 6 {@link Candle}, while keeping the same
+ * {@code AbstractLEDS} with a Phoenix 6 CANdle, while keeping the same
  * per-section pattern model: each section has a base pattern that it returns to
  * after a timed pattern finishes, so WPILib {@link LEDPattern}s (including the
  * GlitchLib fire patterns) compose exactly like they do on the PWM strip.
  *
  * <p>Because the CANdle cannot consume an {@code AddressableLEDBuffer} directly,
  * patterns are rendered into an on-roboRIO buffer and then streamed to the CANdle
- * pixel by pixel with {@link Candle#setLEDs(int, int, int, int, int)}. To comply
- * with the team's anti-flicker / epilepsy guideline, the strip is only refreshed
+ * through a hardware adapter. The strip is only refreshed
  * at most once every {@link #ledRefreshPeriodSeconds} seconds, matching the cadence
- * of GlitchLib's {@code AbstractLEDS}.
+ * of GlitchLib's {@code AbstractLEDS}. This limits CAN traffic; it is not an
+ * assessment of visual or photosensitivity safety.
  */
 public abstract class CandleLEDs extends SubsystemBase {
 
   /** Duration sentinel meaning "run forever". */
   public static final double infiniteDurationSeconds = -1.0;
 
-  /** Maximum strip refresh rate in seconds (eye-safety throttle). */
+  /** Minimum interval between strip refreshes in seconds. */
   public static final double ledRefreshPeriodSeconds = 0.2;
 
-  private final Candle candle;
+  private final LedOutput output;
+  private final LongSupplier clockMicroseconds;
+  private final Consumer<String> reportError;
   private final AddressableLEDBuffer stripBuffer;
 
   /** The single continuous section covering the whole strip. */
   protected final Section strip;
 
   private boolean enabled = true;
-  private double lastUpdateTimeMicroseconds;
+  private double lastUpdateTimeMicroseconds = Double.NaN;
   private double lastLedWriteTimeMicroseconds;
   private double deltaTimeSeconds;
   private boolean candleUnhealthyLogged = false;
@@ -62,17 +63,17 @@ public abstract class CandleLEDs extends SubsystemBase {
    * @param brightnessScalar Global brightness from 0.0 to 1.0 applied by the CANdle.
    * @param stripType The RGB channel order of the physical strip.
    */
-  protected CandleLEDs(int candleId, int ledCount, double brightnessScalar, LedStripType stripType) {
-    candle = new Candle(candleId);
+  protected CandleLEDs(int candleId, int ledCount, double brightnessScalar, StripTypeValue stripType) {
+    this(ledCount, new PhoenixLedOutput(candleId, brightnessScalar, stripType),
+        RobotController::getTime, message -> DriverStation.reportError(message, false));
+  }
 
-    CandleConfiguration config = new CandleConfiguration();
-    config.brightnessScalar = brightnessScalar;
-    config.v5Enabled = true; // CANdle VBUS powers the strip; without this nothing lights up.
-    config.stripType = stripType;
-    // Note: field names / return types in CandleConfiguration depend on the vendored
-    // Phoenix 6 version (26.1.1 in the 2026 repo); rename if the build disagrees.
-    candle.getConfigurator().apply(config);
-
+  /** Hardware/time seam: tests exercise the same rendering and retry logic as the robot. */
+  protected CandleLEDs(int ledCount, LedOutput output, LongSupplier clockMicroseconds,
+      Consumer<String> reportError) {
+    this.output = output;
+    this.clockMicroseconds = clockMicroseconds;
+    this.reportError = reportError;
     stripBuffer = new AddressableLEDBuffer(ledCount);
     strip = new Section(0, ledCount - 1);
   }
@@ -175,7 +176,7 @@ public abstract class CandleLEDs extends SubsystemBase {
    */
   public void setEnabled(boolean enabled) {
     if (!enabled && this.enabled) {
-      candle.setLEDs(0, stripBuffer.getLength(), 0, 0, 0);
+      output.setLEDs(0, stripBuffer.getLength(), 0, 0, 0);
     }
     this.enabled = enabled;
   }
@@ -192,8 +193,8 @@ public abstract class CandleLEDs extends SubsystemBase {
    */
   @Override
   public void periodic() {
-    double now = RobotController.getTime();
-    if (lastUpdateTimeMicroseconds == 0.0) {
+    double now = clockMicroseconds.getAsLong();
+    if (Double.isNaN(lastUpdateTimeMicroseconds)) {
       deltaTimeSeconds = 0.02;
     } else {
       deltaTimeSeconds = Microseconds.of(now - lastUpdateTimeMicroseconds).in(Seconds);
@@ -217,8 +218,7 @@ public abstract class CandleLEDs extends SubsystemBase {
   private void pushToCandle() {
     boolean healthy = true;
     for (int i = 0; i < stripBuffer.getLength(); i++) {
-      if (candle.setLEDs(i, 1, stripBuffer.getRed(i), stripBuffer.getGreen(i), stripBuffer.getBlue(i))
-          != StatusCode.OK) {
+      if (!output.setLEDs(i, 1, stripBuffer.getRed(i), stripBuffer.getGreen(i), stripBuffer.getBlue(i))) {
         healthy = false;
         break;
       }
@@ -227,8 +227,8 @@ public abstract class CandleLEDs extends SubsystemBase {
     if (!healthy) {
       if (!candleUnhealthyLogged) {
         candleUnhealthyLogged = true;
-        DriverStation.reportError(
-            "CANdle is not responding over CAN. Check the device ID and wiring.", false);
+        reportError.accept(
+            "CANdle is not responding over CAN. Check the device ID and wiring.");
       }
       // Keep lastLedWriteTimeMicroseconds untouched so retries stay on the 0.2 s throttle
       // instead of bursting every robot period while the fault persists.
