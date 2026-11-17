@@ -44,7 +44,7 @@ def summarize(report_dir, outcome):
         lines += ["Tests are only part of verification. Inspect the failed build step before treating this revision as ready.", ""]
     lines += ["### What this evidence means", "",
               "The suite is designed to check compilation, LED state/timing, rendered output, CAN request mapping, "
-              "and controlled fault handling. They do not prove wiring, physical light output, "
+              "controlled fault handling, and the Beako-RIO LED-status, vision, drivetrain, and path-file assertions. They do not prove wiring, physical light output, "
               "photosensitivity safety, real CAN utilization, or match performance.", "",
               "Run the full check with `./gradlew build`. Open `build/reports/tests/test/index.html` "
               "locally, or download **verification-reports** from this run. See `docs/testing.md` "

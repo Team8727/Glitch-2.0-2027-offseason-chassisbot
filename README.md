@@ -1,3 +1,8 @@
+> **Combined test example only.** This branch adds Beako-RIO to the shared baseline
+> and uses Beako-RIO's Robot lifecycle. Both LED implementations remain compiled
+> and tested, but the baseline LED subsystem is not wired into Beako's runtime.
+> Do not deploy this as a validated robot release. See [the example notes](docs/combined-test-example.md).
+
 # Glitch 2.0 — 2027 offseason chassisbot
 
 `main` is the shared baseline. Named exercise branches explore alternatives and
