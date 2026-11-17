@@ -40,6 +40,10 @@ jobs:
         id: build
         run: ./gradlew build --no-daemon --console=plain
 
+      - name: Verify baseline and exercise suites both ran
+        if: always()
+        run: python3 tools/verify_suites.py
+
       - name: Explain results
         if: always()
         env:

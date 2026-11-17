@@ -1,8 +1,15 @@
 # Glitch 2.0 — 2027 offseason chassisbot
 
 `main` is the shared baseline. Named exercise branches explore alternatives and
-are not automatically part of this robot. The current baseline runs LEDs only;
-it does not include a drivetrain or a full-match simulator.
+are not automatically part of this robot.
+
+This branch proposes integrating the `Beako-RIO` 2027 chassis exercise — CTRE
+swerve, PhotonVision fusion, PathPlanner autos, DogLog telemetry, and a CANdle
+status strip — into the shared baseline. It keeps main's workflow, pinned
+GlitchLib, and existing LED implementation and tests. Read
+[the integration notes](docs/beako-integration.md) before enabling the robot:
+several measurements are still unset and the LED device configuration must be
+confirmed on hardware.
 
 ## Build and test
 
