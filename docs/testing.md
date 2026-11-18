@@ -16,14 +16,16 @@ The baseline is adapted from the competition repo
 | CTRE Phoenix | `vendordeps/Phoenix6-26.1.1.json` | 26.1.1 |
 | REV | `vendordeps/REVLib.json` | 2026.0.2 (used by GlitchLib) |
 | PhotonVision | `vendordeps/photonlib.json` | v2026.2.2 (used by GlitchLib) |
+| PathPlanner | `vendordeps/PathplannerLib-2026.1.2.json` | 2026.1.2 (imported with the chassis exercise) |
+| DogLog | `vendordeps/DogLog.json` | imported with the chassis exercise |
 | Command framework | `vendordeps/WPILibNewCommands.json` | WPILib-selected version |
 | GlitchLib | Git submodule entry | `2832afe35dd10c3b9226e48d82cd45e3a06a962a` |
 | JUnit | `build.gradle` | 5.10.1 |
 
 The full pinned GlitchLib source and its tests are compiled without modifying
-the library. Its motor and vision classes require REV and PhotonVision even
-though the robot baseline currently uses only its LED patterns. Unused
-competition dependencies (PathPlanner, Studica, URCL) are not carried over.
+the library. Its motor and vision classes require REV and PhotonVision.
+PathPlanner and DogLog are declared because the integrated chassis code uses
+them; Studica and URCL are not carried over.
 
 After pulling a dependency change, run `git submodule update --init --recursive`
 and `./gradlew build` while online. Do not use `git submodule update --remote`:
@@ -94,13 +96,34 @@ They execute real rendering and mode logic but do not create a physical CANdle.
 Random fire-animation frames are not golden-image tested. Time advances without
 sleeping. The library's own tests run alongside these tests.
 
+## Imported chassis-exercise contracts
+
+The `Beako-RIO` integration adds a second set of tests. These assert pure
+functions and file/constant loading; they do not touch hardware.
+
+| Area | Expected behavior | Why it matters |
+| --- | --- | --- |
+| Status LED precedence | Low battery overrides teleop, disabled overrides low battery, auto is distinct, vision falls back to odometry | One predictable status at a time |
+| Status strip bounds | Strip length is greater than the 8 onboard pixels and within the CANdle limit | Avoid addressing onboard LEDs or invalid indices |
+| Drive constants | MK5n gear ratios, 4.39 m/s free speed, four modules defined | A wrong ratio silently scales every auto |
+| Path assets | `DriveForward`, `Circle`, and `pathplanner/settings.json` load | Missing deploy files fail only on the field |
+| Vision filtering | Field/margin rejection, pose-height rejection, distance-scaled std devs, single-tag ambiguity gates, steer-offset normalization | Bad measurements must not be fused |
+
+Only `StatusLEDs` is instantiated at runtime; `LEDSubsystem` is compiled and
+tested but not wired, so the robot creates one `CANdle` handle, not two. See
+[the integration notes](beako-integration.md) for the rationale and the
+unresolved device-configuration conflict.
+
 ## Reading CI feedback
 
 The required-check candidate is **Build and behavioral tests**. The summary
 reports build status and passed/failed/skipped counts, distinguishes robot tests
 from library tests, and includes assertion messages plus reproduction commands.
-Download `verification-reports` for the HTML report and JUnit XML, including on
-failure. Reports are retained for 14 days.
+A following step, **Verify baseline and exercise suites both ran**, re-reads the
+JUnit XML by class and fails the job if an expected suite is missing, skipped, or
+shorter than its known test count (`tools/verify_suites.py`). Download
+`verification-reports` for the HTML report and JUnit XML, including on failure.
+Reports are retained for 14 days.
 
 - **Setup/dependency failure:** inspect the first failed step. No test report
   means behavior was not checked; it does not mean the robot behavior failed.
@@ -118,17 +141,30 @@ proof of optimal code or better match performance.
 
 ## What CI does not establish
 
-Before deploying this LED-only baseline, verify on the bench: CAN ID 14, external
-strip length 60, RGB order, brightness, power wiring, configuration success,
-first/last pixel addressing, mode transitions, and disconnect/recovery behavior.
-The adapter enables the 5V rail and sets VBat output on; match this to the actual
-strip wiring. The 200 ms write interval is a traffic policy, not a guarantee of
-photosensitivity safety. CI does not deploy or score simulated matches.
+Before deploying, verify on the bench: CANdle device ID, external strip length,
+RGB order, brightness, power wiring, configuration success, first/last pixel
+addressing, mode transitions, and disconnect/recovery behavior. The active
+`StatusLEDs` implementation is configured for CANdle **49** with **88** pixels,
+while the retained baseline LED code and the table above use **14** and **60**.
+Main and the exercise branch disagree; measure the 2027 strip and settle it before
+enabling the robot. Both adapters enable the 5V rail, and `PhoenixLedOutput` also
+sets VBat output on; match this to the actual strip wiring. The baseline's 200 ms
+write interval is a traffic policy, not a guarantee of photosensitivity safety.
+CI does not deploy or score simulated matches.
 
-The baseline still uses per-pixel writes, and a failed blanking request has no
-dedicated retry while output remains disabled. Treat these as future measured
-improvement opportunities, with explicit requirements and tests before changing
-behavior. Invalid override-duration policy also remains a future contract decision.
+The retained `LEDSubsystem` still uses per-pixel writes, and a failed blanking
+request has no dedicated retry while output remains disabled. Treat these as
+future measured improvement opportunities, with explicit requirements and tests
+before changing behavior. Invalid override-duration policy also remains a future
+contract decision. `StatusLEDs` instead renders on-device with frame animations;
+its traffic and thermal behavior are unmeasured.
+
+The chassis integration also cannot be validated by tests alone. Swerve module
+IDs, encoder offsets, wheel radius, module geometry, CANivore name, Pigeon
+mounting, camera transforms, and PathPlanner field settings are placeholders or
+`TODO` values in `TunerConstants`, `VisionConstants`, and `deploy/pathplanner`.
+Nothing in the suite proves a motor spins the right way, that vision poses are
+correct, or that an auto is safe to run near people.
 
 ## Repository rollout
 
